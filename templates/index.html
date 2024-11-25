@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lighthouse Metrics</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- External CSS File -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Lighthouse Metrics</h1>
+        <button id="check-metrics">Check Metrics</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>URL</th>
+                    <th>FCP</th>
+                    <th>LCP</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="metrics-table"></tbody>
+        </table>
+
+        <div class="download-link" id="download-link"></div>
+    </div>
+
+    <script>
+        $('#check-metrics').on('click', function () {
+            const button = $(this);
+            const originalText = button.text();  // 원래 버튼 텍스트
+            button.prop('disabled', true);  // 버튼 비활성화
+            button.text('Loading');  // 버튼 텍스트 변경
+            button.addClass('loading');  // 로딩 상태 클래스를 버튼에 추가
+
+            // 스피너 추가
+            button.append('<div class="spinner"></div>');
+
+            $.get('/check', function (data) {
+                const table = $('#metrics-table');
+                table.empty();
+                const downloadLinkDiv = $('#download-link');
+                downloadLinkDiv.empty(); // 다운로드 링크 초기화
+
+                // 테이블에 결과 추가
+                data.metrics.forEach(item => {
+                    const statusClass = item.error ? 'error' : 'success';
+                    const row = `
+                        <tr>
+                            <td>${item.url}</td>
+                            <td>${item.FCP || 'N/A'}</td>
+                            <td>${item.LCP || 'N/A'}</td>
+                            <td class="status ${statusClass}">${item.error ? 'Error: ' + item.error : 'Success'}</td>
+                        </tr>
+                    `;
+                    table.append(row);
+                });
+
+                // 엑셀 파일 다운로드 링크 추가
+                if (data.excel_file) {
+                    const downloadLink = `<a href="${data.excel_file}" download>Download Excel File</a>`;
+                    downloadLinkDiv.append(downloadLink);
+                }
+
+                // 작업 완료 후 버튼 원상복구
+                button.prop('disabled', false);
+                button.text(originalText);  // 버튼 텍스트 복원
+                button.removeClass('loading');  // 로딩 클래스 제거
+                button.find('.spinner').remove();  // 스피너 제거
+            });
+        });
+    </script>
+</body>
+
+</html>
